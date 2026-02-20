@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Единая система аутентификации — Госуслуги</title>
+    <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --gos-blue: #0066b3;
+            --gos-dark-blue: #005093;
+            --gos-dark: #0b1f33;
+            --gos-gray: #66727c;
+            --gos-light: #f5f7fa;
+            --gos-border: #e5e9eb;
+            --gos-active: #e6f2fa;
+        }
+
+        body {
+            font-family: "PT Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gos-light);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: var(--gos-dark);
+        }
+
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--gos-border);
+            padding: 16px 0;
+            box-shadow: 0 2px 8px rgba(11,31,51,0.04);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .flag {
+            width: 38px;
+            height: 26px;
+            border-radius: 2px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.08);
+        }
+
+        .flag-white { background: white; height: 33.33%; }
+        .flag-blue { background: #0039a6; height: 33.33%; }
+        .flag-red { background: #d52b1e; height: 33.33%; }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--gos-dark);
+            letter-spacing: -0.2px;
+        }
+
+        .logo-tagline {
+            font-size: 11px;
+            color: var(--gos-gray);
+            margin-left: 8px;
+            font-weight: 400;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+        }
+
+        .loader-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 16px rgba(11,31,51,0.08);
+            padding: 48px 56px;
+            max-width: 540px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Анимация как в новых Госуслугах — три точки */
+        .loader-animation {
+            margin-bottom: 32px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .loader-dot {
+            width: 12px;
+            height: 12px;
+            background: var(--gos-blue);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+            opacity: 0.4;
+        }
+
+        .loader-dot:nth-child(1) { animation-delay: -0.32s; }
+        .loader-dot:nth-child(2) { animation-delay: -0.16s; }
+        .loader-dot:nth-child(3) { animation-delay: 0s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Иконка успеха — синяя галочка в круге */
+        .success-state {
+            display: none;
+            margin-bottom: 24px;
+        }
+
+        .success-ring {
+            width: 56px;
+            height: 56px;
+            border: 3px solid var(--gos-blue);
+            border-radius: 50%;
+            margin: 0 auto;
+            position: relative;
+            animation: scaleIn 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .success-ring::after {
+            content: "";
+            width: 24px;
+            height: 12px;
+            border-left: 3px solid var(--gos-blue);
+            border-bottom: 3px solid var(--gos-blue);
+            transform: rotate(-45deg) translate(2px, -2px);
+            animation: checkDraw 0.4s ease-out 0.2s both;
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes checkDraw {
+            from { width: 0; height: 0; }
+            to { width: 24px; height: 12px; }
+        }
+
+        .status-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--gos-dark);
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .status-sub {
+            font-size: 15px;
+            color: var(--gos-gray);
+            line-height: 1.5;
+            min-height: 44px;
+            margin-bottom: 24px;
+        }
+
+        /* Прогресс бар Госуслуг — тонкий, синий, с градиентом */
+        .progress-wrap {
+            margin-bottom: 32px;
+        }
+
+        .progress-track {
+            width: 100%;
+            height: 4px;
+            background: #e8eced;
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--gos-blue) 0%, var(--gos-dark-blue) 100%);
+            border-radius: 2px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--gos-gray);
+        }
+
+        .progress-percent {
+            font-weight: 700;
+            color: var(--gos-blue);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Шаги процесса — синие иконки, не зелёные */
+        .steps {
+            text-align: left;
+            border-top: 1px solid var(--gos-border);
+            padding-top: 24px;
+        }
+
+        .step-header {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--gos-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 14px;
+            opacity: 0.4;
+            transition: all 0.4s ease;
+            transform: translateX(-10px);
+        }
+
+        .step-item.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .step-item.completed {
+            opacity: 0.7;
+            transform: translateX(0);
+        }
+
+        .step-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        /* Круг с синей галочкой */
+        .step-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .step-icon .circle-bg {
+            fill: none;
+            stroke: var(--gos-border);
+            stroke-width: 2;
+            transition: all 0.3s;
+        }
+
+        .step-icon .circle-fill {
+            fill: var(--gos-blue);
+            opacity: 0;
+            transform: scale(0);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .step-icon .check {
+            fill: none;
+            stroke: white;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0;
+            stroke-dasharray: 16;
+            stroke-dashoffset: 16;
+            transition: all 0.3s;
+        }
+
+        .step-item.active .step-icon .circle-fill,
+        .step-item.completed .step-icon .circle-fill {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .step-item.active .check,
+        .step-item.completed .check {
+            opacity: 1;
+            stroke-dashoffset: 0;
+            transition-delay: 0.15s;
+        }
+
+        .step-text {
+            font-size: 14px;
+            color: var(--gos-dark);
+            font-weight: 400;
+        }
+
+        .step-item.active .step-text {
+            font-weight: 700;
+            color: var(--gos-blue);
+        }
+
+        /* Текущий шаг — кружок с точкой */
+        .step-current .step-icon::before {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: var(--gos-blue);
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0,102,179,0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(0,102,179,0); }
+            100% { box-shadow: 0 0 0 0 rgba(0,102,179,0); }
+        }
+
+        .footer {
+            background: white;
+            border-top: 1px solid var(--gos-border);
+            padding: 20px 24px;
+            text-align: center;
+        }
+
+        .footer-text {
+            font-size: 13px;
+            color: var(--gos-gray);
+            line-height: 1.5;
+        }
+
+        .footer-links {
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            color: var(--gos-blue);
+            text-decoration: none;
+            font-size: 13px;
+            margin: 0 8px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 640px) {
+            .header {
+                padding: 12px 0;
+            }
+
+            .header-content {
+                padding: 0 16px;
+            }
+
+            .flag {
+                width: 32px;
+                height: 22px;
+            }
+
+            .logo-text {
+                font-size: 18px;
+            }
+
+            .logo-tagline {
+                display: none;
+            }
+
+            .main {
+                padding: 16px;
+                align-items: flex-start;
+                padding-top: 32px;
+            }
+
+            .loader-card {
+                padding: 32px 24px;
+                border-radius: 0;
+                box-shadow: 0 1px 8px rgba(11,31,51,0.06);
+                border: 1px solid var(--gos-border);
+            }
+
+            .status-title {
+                font-size: 20px;
+            }
+
+            .status-sub {
+                font-size: 14px;
+                min-height: 40px;
+            }
+
+            .step-text {
+                font-size: 13px;
+            }
+
+            .footer {
+                padding: 16px;
+            }
+
+            .footer-links {
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+
+        /* Скрытые детали для реализма */
+        .tech-detail {
+            font-family: monospace;
+            font-size: 11px;
+            color: var(--gos-border);
+            margin-top: 4px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .step-item.active .tech-detail {
+            opacity: 1;
+            color: var(--gos-gray);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="flag">
+                    <div class="flag-white"></div>
+                    <div class="flag-blue"></div>
+                    <div class="flag-red"></div>
+                </div>
+                <span class="logo-text">Госуслуги</span>
+                <span class="logo-tagline">Россия</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="loader-card">
+            <div class="loader-animation" id="loaderBox">
+                <div class="loader-dot"></div>
+                <div class="loader-dot"></div>
+                <div class="loader-dot"></div>
+            </div>
+
+            <div class="success-state" id="successBox">
+                <div class="success-ring"></div>
+            </div>
+
+            <h1 class="status-title" id="mainTitle">Проверка данных</h1>
+            <p class="status-sub" id="subText">Подключение к информационной системе...</p>
+
+            <div class="progress-wrap">
+                <div class="progress-track">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-info">
+                    <span>Выполнение операции</span>
+                    <span class="progress-percent" id="percentVal">0%</span>
+                </div>
+            </div>
+
+            <div class="steps">
+                <div class="step-header">Ход операции</div>
+                
+                <div class="step-item active" id="step1">
+                    <div class="step-icon">
+                        <svg viewBox="0 0 20 20">
+                            <circle class="circle-bg" cx="10" cy="10" r="9"/>
+                            <circle class="circle-fill" cx="10" cy="10" r="9"/>
+                            <path class="check" d="M6 10l3 3 5-6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="step-text">Проверка сертификата ЕСИА</div>
+                        <div class="tech-detail">ID: 7725593390 • TLS 1.3</div>
+                    </div>
+                </div>
+
+                <div class="step-item" id="step2">
+                    <div class="step-icon">
+                        <svg viewBox="0 0 20 20">
+                            <circle class="circle-bg" cx="10" cy="10" r="9"/>
+                            <circle class="circle-fill" cx="10" cy="10" r="9"/>
+                            <path class="check" d="M6 10l3 3 5-6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="step-text">Верификация СНИЛС</div>
+                        <div class="tech-detail">Запрос в ЕГИС СОЦ...</div>
+                    </div>
+                </div>
+
+                <div class="step-item" id="step3">
+                    <div class="step-icon">
+                        <svg viewBox="0 0 20 20">
+                            <circle class="circle-bg" cx="10" cy="10" r="9"/>
+                            <circle class="circle-fill" cx="10" cy="10" r="9"/>
+                            <path class="check" d="M6 10l3 3 5-6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="step-text">Обмен с СМЭВ</div>
+                        <div class="tech-detail">Шлюз: smev.gov.ru</div>
+                    </div>
+                </div>
+
+                <div class="step-item" id="step4">
+                    <div class="step-icon">
+                        <svg viewBox="0 0 20 20">
+                            <circle class="circle-bg" cx="10" cy="10" r="9"/>
+                            <circle class="circle-fill" cx="10" cy="10" r="9"/>
+                            <path class="check" d="M6 10l3 3 5-6"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <div class="step-text">Формирование сессии</div>
+                        <div class="tech-detail">Token: ESIA-42...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-links">
+            <a href="#">Техническая поддержка</a>
+            <a href="#">Условия использования</a>
+        </div>
+        <div class="footer-text">
+            © 2024 Минцифры России<br>
+            Единая система идентификации и аутентификации (ЕСИА)
+        </div>
+    </footer>
+
+    <script>
+        const progressBar = document.getElementById('progressBar');
+        const percentVal = document.getElementById('percentVal');
+        const mainTitle = document.getElementById('mainTitle');
+        const subText = document.getElementById('subText');
+        const loaderBox = document.getElementById('loaderBox');
+        const successBox = document.getElementById('successBox');
+
+        const steps = [
+            { id: 'step1', progress: 25, text: 'Установка защищенного канала...', title: 'Проверка данных' },
+            { id: 'step2', progress: 50, text: 'Поиск в базе ЕГИС СОЦ...', title: 'Верификация' },
+            { id: 'step3', progress: 75, text: 'Обработка через СМЭВ...', title: 'Обмен данными' },
+            { id: 'step4', progress: 100, text: 'Инициализация сессии...', title: 'Завершение' }
+        ];
+
+        let currentStep = 0;
+
+        function updateStep(index) {
+            // Помечаем предыдущие шаги как выполненные
+            for (let i = 0; i <= index; i++) {
+                const el = document.getElementById(steps[i].id);
+                el.classList.remove('active');
+                el.classList.add('completed');
+            }
+            
+            // Активируем текущий
+            if (index < steps.length - 1) {
+                document.getElementById(steps[index + 1].id).classList.add('active');
+            } else {
+                // Последний шаг — финал
+                document.getElementById(steps[index].id).classList.add('completed');
+            }
+
+            // Обновляем прогресс
+            progressBar.style.width = steps[index].progress + '%';
+            percentVal.textContent = steps[index].progress + '%';
+            subText.textContent = steps[index].text;
+            
+            if (index === steps.length - 1) {
+                mainTitle.textContent = 'Подготовка данных';
+            }
+        }
+
+        // Пошаговая анимация
+        let step = 0;
+        const interval = setInterval(() => {
+            if (step < steps.length) {
+                updateStep(step);
+                step++;
+            } else {
+                clearInterval(interval);
+                finishLoading();
+            }
+        }, 900);
+
+        function finishLoading() {
+            setTimeout(() => {
+                loaderBox.style.display = 'none';
+                successBox.style.display = 'block';
+                mainTitle.textContent = 'Готово';
+                mainTitle.style.color = 'var(--gos-blue)';
+                subText.textContent = 'Перенаправление в личный кабинет...';
+                percentVal.textContent = '100%';
+                
+                setTimeout(() => {
+                    window.location.href = 'https://www.gosuslugi.ru/';
+                }, 2000);
+            }, 400);
+        }
+
+        // Блокировка стандартных действий для "приложения"
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('selectstart', e => e.preventDefault());
+    </script>
+
+</body>
+</html>
